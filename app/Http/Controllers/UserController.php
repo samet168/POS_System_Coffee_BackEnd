@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
-    // GET ALL USERS
+    
     public function index()
     {
         $users = User::all();
@@ -19,7 +19,7 @@ class UserController extends Controller
         ], 200);
     }
 
-    // CREATE USER
+    
     public function store(Request $request)
     {
         $request->validate([
@@ -37,7 +37,6 @@ class UserController extends Controller
         $user->password = bcrypt($request->password);
         $user->role = $request->role ?? 'user';
 
-        // Upload Image
         if ($request->hasFile('image')) {
 
             $file = $request->file('image');
@@ -58,7 +57,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    // SHOW USER
+    
     public function show($id)
     {
         $user = User::find($id, ['*']);
@@ -76,7 +75,7 @@ class UserController extends Controller
         ], 200);
     }
 
-    // UPDATE USER
+   
     public function update(Request $request, $id)
     {
         $user = User::find($id, ['*']);
@@ -99,12 +98,12 @@ class UserController extends Controller
         $user->email = $request->email;
         $user->role = $request->role ?? $user->role;
 
-        // Update Password
+        
         if ($request->filled('password')) {
             $user->password = bcrypt($request->password);
         }
 
-        // Update Image
+        
         if ($request->hasFile('image')) {
 
             $file = $request->file('image');

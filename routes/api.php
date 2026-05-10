@@ -1,4 +1,6 @@
 <?php
+
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemCategoryController;
@@ -11,7 +13,7 @@ use App\Http\Controllers\PaymentStatusController;
 use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\SizeController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\AuthController; 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 

@@ -11,7 +11,7 @@ class OrderController extends Controller
 {
     public function index()
     {
-        // ទាញយក Order ទាំងអស់ជាមួយ Relationship
+        
         $orders = Order::with(['orderItems.item', 'orderItems.size'])->get();
 
         return response()->json([
@@ -30,8 +30,8 @@ class OrderController extends Controller
             'items.*.item_id' => 'required',
             'items.*.size_id' => 'required',
             'items.*.quantity'=> 'required|integer|min:1',
-            'items.*.ice_level_id'   => 'nullable', // បន្ថែមសម្រាប់កម្រិតទឹកកក
-            'items.*.sugar_level_id' => 'nullable', // បន្ថែមសម្រាប់កម្រិតស្ករ
+            'items.*.ice_level_id'   => 'nullable', 
+            'items.*.sugar_level_id' => 'nullable', 
         ]);
 
         try {
@@ -57,8 +57,8 @@ class OrderController extends Controller
                     'order_id'       => $order->id,
                     'item_id'        => $item['item_id'],
                     'size_id'        => $item['size_id'],
-                    'ice_level_id'   => $item['ice_level_id'] ?? null,   // រក្សាទុកកម្រិតទឹកកក
-                    'sugar_level_id' => $item['sugar_level_id'] ?? null, // រក្សាទុកកម្រិតស្ករ
+                    'ice_level_id'   => $item['ice_level_id'] ?? null,   
+                    'sugar_level_id' => $item['sugar_level_id'] ?? null, 
                     'quantity'       => $item['quantity'],
                     'unit_price'     => $unitPrice,
                     'sub_total'      => $subTotal,

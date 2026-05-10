@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\IceLevelController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
@@ -12,16 +13,15 @@ use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\PaymentStatusController;
 use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\SizeController;
+use App\Http\Controllers\SugarLevelController;
 use App\Http\Controllers\UserController;
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-
-
 
 Route::middleware(['auth.token'])->group(function () {
 
@@ -47,6 +47,19 @@ Route::middleware(['auth.token'])->group(function () {
         Route::get('/order-statuses/{id}', [OrderStatusController::class, 'show']);
         Route::post('/order-statuses/{id}', [OrderStatusController::class, 'update']);
         Route::delete('/order-statuses/{id}', [OrderStatusController::class, 'destroy']);
+
+        Route::get('/ice-levels', [IceLevelController::class, 'index']);
+        Route::post('/ice-levels', [IceLevelController::class, 'store']);
+        Route::get('/ice-levels/{id}', [IceLevelController::class, 'show']);
+        Route::post('/ice-levels/{id}', [IceLevelController::class, 'update']);
+        Route::delete('/ice-levels/{id}', [IceLevelController::class, 'destroy']);
+
+    // Sugar Levels Routes
+    Route::get('/sugar-levels', [SugarLevelController::class, 'index']);
+    Route::post('/sugar-levels', [SugarLevelController::class, 'store']);
+    Route::get('/sugar-levels/{id}', [SugarLevelController::class, 'show']);
+    Route::post('/sugar-levels/{id}', [SugarLevelController::class, 'update']);
+    Route::delete('/sugar-levels/{id}', [SugarLevelController::class, 'destroy']);
 
         Route::get('/payment-types', [PaymentTypeController::class, 'index']);
         Route::post('/payment-types', [PaymentTypeController::class, 'store']);

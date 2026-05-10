@@ -14,9 +14,8 @@ class IceLevel extends Model
         'description'
     ];
 
-    public function items()
-    {
-        return $this->belongsToMany(Item::class, 'item_ice_options');
-    }
+    public function items() {
+            return $this->belongsToMany(Item::class, null, 'ice_level_ids', 'item_ids');
+        }
 
 }

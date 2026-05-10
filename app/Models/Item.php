@@ -30,4 +30,13 @@ class Item extends Model
     {
         return $this->hasMany(ItemSizePrice::class, 'item_id');
     }
+    public function ice_options()
+    {
+        return $this->belongsToMany(IceLevel::class, 'item_ice_options');
+    }
+
+    public function sugar_options()
+    {
+        return $this->belongsToMany(SugarLevel::class, 'item_sugar_options');
+    }
 }

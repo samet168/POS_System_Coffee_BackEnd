@@ -51,7 +51,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Wrong password'], 401);
         }
 
-        // ✅ create token
+        
         $token = bin2hex(random_bytes(30));
 
         $user->token = $token;

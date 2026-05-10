@@ -8,13 +8,9 @@ class OrderItem extends Model
 {
     protected $collection = 'order_items';
 
-    protected $fillable = [
-        'order_id',
-        'item_id',
-        'size_id',
-        'quantity',
-        'unit_price',
-        'sub_total'
+protected $fillable = [
+        'order_id', 'item_id', 'size_id', 'ice_level_id', 'sugar_level_id', 
+        'quantity', 'unit_price', 'sub_total'
     ];
 
     public function order()
@@ -30,5 +26,14 @@ class OrderItem extends Model
     public function size()
     {
         return $this->belongsTo(Size::class, 'size_id');
+    }
+    public function iceLevel()
+    {
+        return $this->belongsTo(IceLevel::class, 'ice_level_id');
+    }
+
+    public function sugarLevel()
+    {
+        return $this->belongsTo(SugarLevel::class, 'sugar_level_id');
     }
 }

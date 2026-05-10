@@ -8,14 +8,23 @@ class Invoice extends Model
 {
     protected $collection = 'invoices';
 
+    // protected $fillable = [
+    //     'order_id',
+    //     'invoice_no',
+    //     'payment_status_id',
+    //     'payment_type_id',
+    //     'total_paid',
+    //     'change_amount',
+    //     'issued_at'
+    // ];
     protected $fillable = [
-        'order_id',
+        'order_ids', // Array នៃ IDs
         'invoice_no',
         'payment_status_id',
         'payment_type_id',
+        'total_amount',
         'total_paid',
-        'change_amount',
-        'issued_at'
+        'change_amount'
     ];
 
     public function order()

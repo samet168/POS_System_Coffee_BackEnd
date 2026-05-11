@@ -4,68 +4,137 @@ namespace App\Http\Controllers;
 
 use App\Models\ItemSizePrice;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class ItemSizePriceController extends Controller
 {
-    public function index()
+    
+    public function index(Request $request)
     {
-        $prices = ItemSizePrice::with(['item', 'size'])->get();
+        $itemId = $request->query('item_id');
+
+        $query = ItemSizePrice::with(['item', 'size']);
+
+        if ($itemId) {
+            $query->where('item_id', $itemId);
+        }
+
+        $prices = $query->latest()->paginate(20);
+
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Item size prices retrieved successfully',
-            'data' => $prices
-        ], 200);
+            'data'    => $prices
+        ]);
     }
 
+   
     public function store(Request $request)
     {
-        $request->validate([
-            'item_id' => 'required|exists:items,_id',
-            'size_id' => 'required|exists:sizes,_id',
-            'price'   => 'required|numeric|min:0'
+        $validator = Validator::make($request->all(), [
+            'item_id'  => 'required|exists:items,id',
+            'size_id'  => 'required|exists:sizes,id',
+            'price'    => 'required|numeric|min:0',
         ]);
 
-        $price = ItemSizePrice::create($request->all());
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        // ការពារកុំឱ្យមានទិន្នន័យស្ទួន (item + size)
+        $exists = ItemSizePrice::where('item_id', $request->item_id)
+                               ->where('size_id', $request->size_id)
+                               ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'This item size price already exists'
+            ], 422);
+        }
+
+        $itemSizePrice = ItemSizePrice::create($request->all());
 
         return response()->json([
-            'status' => true,
+            'status'  => true,
             'message' => 'Item size price created successfully',
-            'data' => $price
+            'data'    => $itemSizePrice->load(['item', 'size'])
         ], 201);
     }
 
+
     public function show($id)
     {
-        $price = ItemSizePrice::with(['item', 'size'])->find($id);
-        if (!$price) return response()->json(['status' => false, 'message' => 'Price record not found'], 404);
-        return response()->json(['
-            status' => true, 
-            'data' => $price], 200);
-    }
+        $itemSizePrice = ItemSizePrice::with(['item', 'size'])->find($id);
 
-    public function update(Request $request, int $id)
-    {
-        $price = ItemSizePrice::find($id,['*']);
-        if (!$price) return response()->json(['
-                status' => false, 
-                'message' => 'Price record not found'], 404);
-
-        $request->validate(['price' => 'required|numeric|min:0']);
-        $price->update($request->only('price'));
+        if (!$itemSizePrice) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Item size price not found'
+            ], 404);
+        }
 
         return response()->json([
-            'status' => true,
-            'message' => 'Price updated successfully',
-            'data' => $price
-        ], 200);
+            'status'  => true,
+            'message' => 'Item size price retrieved successfully',
+            'data'    => $itemSizePrice
+        ]);
     }
 
+
+    public function update(Request $request, $id)
+    {
+        $itemSizePrice = ItemSizePrice::find($id, ['*']);
+
+        if (!$itemSizePrice) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Item size price not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'price' => 'numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Validation failed',
+                'errors'  => $validator->errors()
+            ], 422);
+        }
+
+        $itemSizePrice->update($request->all());
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Item size price updated successfully',
+            'data'    => $itemSizePrice->fresh()->load(['item', 'size'])
+        ]);
+    }
+
+    // លុបតាម ID
     public function destroy($id)
     {
-        $price = ItemSizePrice::find($id,['*']);
-        if (!$price) return response()->json(['status' => false, 'message' => 'Price record not found'], 404);
+        $itemSizePrice = ItemSizePrice::find($id, ['*']);
 
-        $price->delete();
-        return response()->json(['status' => true, 'message' => 'Price record deleted successfully'], 200);
+        if (!$itemSizePrice) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Item size price not found'
+            ], 404);
+        }
+
+        $itemSizePrice->delete();
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Item size price deleted successfully'
+        ], 200);
     }
 }

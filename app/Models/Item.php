@@ -2,41 +2,29 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use MongoDB\Laravel\Eloquent\Model as MongoModel;
 
-class Item extends Model
+class Item extends MongoModel
 {
+    use HasFactory;
+
     protected $connection = 'mongodb';
     protected $collection = 'items';
 
     protected $fillable = [
         'item_category_id',
-        'item_status_id',
         'name',
-        'image'
+        'image',
+        'status',
+    ];
+
+    protected $casts = [
+        'status' => 'string',
     ];
 
     public function category()
     {
         return $this->belongsTo(ItemCategory::class, 'item_category_id');
-    }
-
-    public function status()
-    {
-        return $this->belongsTo(ItemStatus::class, 'item_status_id');
-    }
-
-    public function sizes()
-    {
-        return $this->hasMany(ItemSizePrice::class, 'item_id');
-    }
-    public function ice_options()
-    {
-        return $this->belongsToMany(IceLevel::class, 'item_ice_options');
-    }
-
-    public function sugar_options()
-    {
-        return $this->belongsToMany(SugarLevel::class, 'item_sugar_options');
     }
 }

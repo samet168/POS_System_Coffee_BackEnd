@@ -81,7 +81,7 @@ public function index()
 
     public function show($id)
     {
-        $invoice = Invoice::find($id, ['*']);
+        $invoice = Invoice::find($id);
         
         if (!$invoice) {
             return response()->json(['status' => false, 'message' => 'Invoice not found'], 404);

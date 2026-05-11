@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('item_id')->constrained()->onDelete('cascade');
             $table->foreignId('size_id')->constrained()->onDelete('cascade');
-            $table->decimal('price', 8, 2); // តម្លៃសម្រាប់ទំហំនីមួយៗ
+            $table->decimal('price', 8, 2); 
             $table->timestamps();
         });
     }

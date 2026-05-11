@@ -2,47 +2,43 @@
 
 namespace App\Models;
 
-use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use MongoDB\Laravel\Eloquent\Model as MongoModel;
 
-class Order extends Model
+class Order extends MongoModel
 {
+    use HasFactory;
+
+    protected $connection = 'mongodb';
     protected $collection = 'orders';
 
     protected $fillable = [
-        'order_status_id',
         'discount_id',
         'total_amount',
         'table_number',
-        'user_id'
+        'user_id',
     ];
 
-    public function status()
+    protected $casts = [
+        'total_amount' => 'decimal:2',
+    ];
+
+    public function items()
     {
-        return $this->belongsTo(OrderStatus::class, 'order_status_id');
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function discount()
     {
-        return $this->belongsTo(Discount::class, 'discount_id');
+        return $this->belongsTo(Discount::class);
     }
-
-    public function items()
+    public function orderItems()
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
-
-    public function invoice()
-    {
-        return $this->hasOne(Invoice::class, 'order_id');
-    }
-
-    
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-    public function orderItems()
-{
-    return $this->hasMany(OrderItem::class, 'order_id');
-}
 }

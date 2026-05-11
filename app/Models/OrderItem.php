@@ -2,38 +2,63 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
+    use HasFactory;
+
+    protected $connection = 'mongodb';
     protected $collection = 'order_items';
 
-protected $fillable = [
-        'order_id', 'item_id', 'size_id', 'ice_level_id', 'sugar_level_id', 
-        'quantity', 'unit_price', 'sub_total'
+    protected $fillable = [
+        'order_id',
+        'item_id',
+        'size_id',
+        'ice_level',
+        'sugar_level',
+        'quantity',
+        'unit_price',
+        'sub_total',
     ];
 
-    public function order()
-    {
-        return $this->belongsTo(Order::class, 'order_id');
-    }
+    protected $casts = [
+        'quantity'    => 'integer',
+        'unit_price'  => 'decimal:2',
+        'sub_total'   => 'decimal:2',
+    ];
 
-    public function item()
+    // Constants for Enum
+    const ICE_LEVELS = ['low', 'medium', 'high'];
+    const SUGAR_LEVELS = ['0%', '25%', '50%', '75%', '100%'];
+
+    // ==================== Relationships ====================
+
+        public function item()
     {
-        return $this->belongsTo(Item::class, 'item_id');
+        return $this->belongsTo(Item::class);
     }
 
     public function size()
     {
-        return $this->belongsTo(Size::class, 'size_id');
+        return $this->belongsTo(Size::class);
     }
-    public function iceLevel()
+    public function order(): BelongsTo
     {
-        return $this->belongsTo(IceLevel::class, 'ice_level_id');
+        return $this->belongsTo(Order::class);
     }
 
-    public function sugarLevel()
+
+    // ==================== Auto Calculate Sub Total ====================
+
+    protected static function booted()
     {
-        return $this->belongsTo(SugarLevel::class, 'sugar_level_id');
+        static::saving(function ($orderItem) {
+            if ($orderItem->quantity && $orderItem->unit_price) {
+                $orderItem->sub_total = $orderItem->quantity * $orderItem->unit_price;
+            }
+        });
     }
 }

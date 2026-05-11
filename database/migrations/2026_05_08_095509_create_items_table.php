@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('item_category_id')->constrained();
-            $table->foreignId('item_status_id')->constrained();
             $table->string('name');
             $table->string('image')->nullable();
+            $table->enum('status', ['In Stock', 'Out of Stock'])->default('In Stock');
             $table->timestamps();
         });
     }

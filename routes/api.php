@@ -7,6 +7,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ItemCategoryController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\ItemSizePriceController;
+use App\Http\Controllers\ItemStatusController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderItemController;
 use App\Http\Controllers\OrderStatusController;
@@ -26,6 +27,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware(['auth.token'])->group(function () {
 
 
+
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // ADMIN ---
@@ -42,24 +44,6 @@ Route::middleware(['auth.token'])->group(function () {
         Route::post('/item-categories/{id}', [ItemCategoryController::class, 'update']);
         Route::delete('/item-categories/{id}', [ItemCategoryController::class, 'destroy']);
 
-        Route::get('/order-statuses', [OrderStatusController::class, 'index']);
-        Route::post('/order-statuses', [OrderStatusController::class, 'store']);
-        Route::get('/order-statuses/{id}', [OrderStatusController::class, 'show']);
-        Route::post('/order-statuses/{id}', [OrderStatusController::class, 'update']);
-        Route::delete('/order-statuses/{id}', [OrderStatusController::class, 'destroy']);
-
-        Route::get('/ice-levels', [IceLevelController::class, 'index']);
-        Route::post('/ice-levels', [IceLevelController::class, 'store']);
-        Route::get('/ice-levels/{id}', [IceLevelController::class, 'show']);
-        Route::post('/ice-levels/{id}', [IceLevelController::class, 'update']);
-        Route::delete('/ice-levels/{id}', [IceLevelController::class, 'destroy']);
-
-    // Sugar Levels Routes
-    Route::get('/sugar-levels', [SugarLevelController::class, 'index']);
-    Route::post('/sugar-levels', [SugarLevelController::class, 'store']);
-    Route::get('/sugar-levels/{id}', [SugarLevelController::class, 'show']);
-    Route::post('/sugar-levels/{id}', [SugarLevelController::class, 'update']);
-    Route::delete('/sugar-levels/{id}', [SugarLevelController::class, 'destroy']);
 
         Route::get('/payment-types', [PaymentTypeController::class, 'index']);
         Route::post('/payment-types', [PaymentTypeController::class, 'store']);
@@ -102,19 +86,6 @@ Route::middleware(['auth.token'])->group(function () {
         Route::get('/sizes/{id}', [SizeController::class, 'show']);
         Route::post('/sizes/{id}', [SizeController::class, 'update']);
         Route::delete('/sizes/{id}', [SizeController::class, 'destroy']);
-        
-        Route::get('/orders', [OrderController::class, 'index']);
-        Route::post('/orders', [OrderController::class, 'store']);
-        Route::get('/orders/{id}', [OrderController::class, 'show']);
-        Route::post('/orders/{id}', [OrderController::class, 'update']);
-        Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
-
-        Route::get('/invoices', [InvoiceController::class, 'index']);
-        Route::post('/invoices', [InvoiceController::class, 'store']);
-        Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
-        Route::post('/invoices/{id}', [InvoiceController::class, 'update']);
-        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
-    });
 
     // USER និង ADMIN ---
     Route::middleware(['role:admin,user'])->group(function () {
@@ -133,4 +104,6 @@ Route::middleware(['auth.token'])->group(function () {
         Route::get('/view-items', [ItemController::class, 'index']);
     });
 
+    });
+    
 });

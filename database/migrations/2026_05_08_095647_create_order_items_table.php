@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
-            $table->foreignId('item_id')->constrained();
-            $table->foreignId('size_id')->nullable()->constrained(); 
-            $table->foreignId('ice_level_id')->nullable()->constrained(); 
-            $table->foreignId('sugar_level_id')->nullable()->constrained(); 
+            $table->foreignId('item_id')->constrained(); 
+            $table->foreignId('size_id')->nullable()->constrained();
+            $table->enum('ice_level', ['low', 'medium', 'high'])->nullable();
+            $table->enum('sugar_level', ['0%','25%','50%','75%','100%'])->nullable();  
             $table->integer('quantity');
             $table->decimal('unit_price', 8, 2);
             $table->decimal('sub_total', 10, 2);

@@ -19,27 +19,8 @@ class Item extends MongoModel
         'status',
     ];
 
-    protected $casts = [
-        'status' => 'string',
-    ];
-
-    // Relationship
     public function category()
     {
         return $this->belongsTo(ItemCategory::class, 'item_category_id', '_id');
-    }
-
-    // Search Scope
-    public function scopeSearchText($query, $search)
-    {
-        if (empty($search)) {
-            return $query;
-        }
-
-        return $query->whereRaw([
-            '$or' => [
-                ['name' => ['$regex' => $search, '$options' => 'i']],
-            ]
-        ]);
     }
 }

@@ -21,30 +21,82 @@ class OrderController extends Controller
         ]);
     }
 
-    public function list(Request $request)
+//     public function list(Request $request)
+// {
+//     $orders = Order::with(['user', 'discount'])
+
+//         ->when($request->user_id, function ($query) use ($request) {
+//             $query->where('user_id', $request->user_id);
+//         })
+
+//         ->when($request->discount_id, function ($query) use ($request) {
+//             $query->where('discount_id', $request->discount_id);
+//         })
+
+//         ->when($request->table_number, function ($query) use ($request) {
+//             $query->where('table_number', 'like', '%' . $request->table_number . '%');
+//         })
+
+//         ->latest()
+//         ->paginate(20);
+
+//     return response()->json([
+//         'status'  => true,
+//         'message' => 'Orders retrieved successfully',
+//         'data'    => $orders
+//     ]);
+// }
+
+public function list(Request $request)
 {
-    $orders = Order::with(['user', 'discount'])
+    try {
+        $query = Order::with(['user', 'discount']);
 
-        ->when($request->user_id, function ($query) use ($request) {
+        if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
-        })
+        }
 
-        ->when($request->discount_id, function ($query) use ($request) {
+
+        if ($request->filled('discount_id')) {
             $query->where('discount_id', $request->discount_id);
-        })
+        }
 
-        ->when($request->table_number, function ($query) use ($request) {
+
+        if ($request->filled('table_number')) {
             $query->where('table_number', 'like', '%' . $request->table_number . '%');
-        })
+        }
 
-        ->latest()
-        ->paginate(20);
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('table_number', 'like', '%' . $search . '%')
+                  ->orWhereHas('user', function ($user) use ($search) {
+                      $user->where('name', 'like', '%' . $search . '%')
+                           ->orWhere('phone', 'like', '%' . $search . '%');
+                  });
+            });
+        }
 
-    return response()->json([
-        'status'  => true,
-        'message' => 'Orders retrieved successfully',
-        'data'    => $orders
-    ]);
+        $orders = $query->latest()
+                        ->paginate(10);
+
+        return response()->json([
+            'status'       => true,
+            'message'      => 'Orders retrieved successfully',
+            'total'        => $orders->total(),
+            'current_page' => $orders->currentPage(),
+            'per_page'     => $orders->perPage(),
+            'last_page'    => $orders->lastPage(),
+            'data'         => $orders->items()
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Error occurred',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
 }
     public function store(Request $request)
     {

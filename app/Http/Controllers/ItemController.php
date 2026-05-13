@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use App\Models\ItemCategory;
 
 class ItemController extends Controller
 {
@@ -20,28 +21,116 @@ class ItemController extends Controller
             'data'    => $items
         ]);
     }
+
+// public function list(Request $request)
+// {
+//     try {
+//         // ទាញ Category ទាំងអស់
+//         $categories = ItemCategory::latest()->get();
+
+//         $result = [];
+
+//         foreach ($categories as $category) {
+//             $query = Item::query();
+
+//             // Filter Items តាម Category
+//             $query->where('item_category_id', $category->_id)
+//                   ->orWhere('item_category_id', (string)$category->_id);
+
+//             // Global Search
+//             if ($request->filled('search')) {
+//                 $query->searchText($request->search);
+//             }
+
+//             // Filter by Status
+//             if ($request->filled('status')) {
+//                 $query->where('status', $request->status);
+//             }
+
+//             $items = $query->orderBy('name', 'asc')->get();
+
+//             $result[] = [
+//                 'category_id'   => (string)$category->_id,
+//                 'category_name' => $category->name,
+//                 'items_count'   => $items->count(),
+//                 'items'         => $items->load('category')   
+//             ];
+//         }
+
+//         return response()->json([
+//             'status'  => true,
+//             'message' => 'Items retrieved successfully by category',
+//             'total_categories' => count($result),
+//             'data'    => $result
+//         ]);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Error occurred',
+//             'error'   => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+
 public function list(Request $request)
 {
-    $items = Item::with('category')
+    try {
+        $query = Item::query();
 
-    
-        ->when($request->name, function ($query) use ($request) {
-            $query->where('name', 'like', '%' . $request->name . '%');
-        })
+       
+        if ($request->filled('search')) {
+            $query->searchText($request->search);
+        }
 
 
-        ->when($request->item_category_id, function ($query) use ($request) {
-            $query->where('item_category_id', $request->item_category_id);
-        })
+        if ($request->filled('item_category_id')) {
+            $catId = (string) $request->item_category_id;  
+            $query->where('item_category_id', $catId);
+        }
 
-        ->latest()
-        ->paginate(10);
+  
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
 
-    return response()->json([
-        'status'  => true,
-        'message' => 'Items retrieved successfully',
-        'data'    => $items
-    ]);
+  
+        $sortBy = $request->get('sort_by', '_id');
+        $sortDir = $request->get('sort_dir', 'desc');
+
+        $allowed = ['_id', 'name', 'created_at'];
+        if (in_array($sortBy, $allowed)) {
+            $query->orderBy($sortBy, $sortDir);
+        } else {
+            $query->orderBy('_id', 'desc');
+        }
+
+      
+        $perPage = (int) $request->get('per_page', 10);
+        $perPage = max(1, min(100, $perPage));
+
+        $items = $query->paginate($perPage);
+
+        $items->load('category');
+
+        return response()->json([
+            'status'       => true,
+            'message'      => 'Items retrieved successfully',
+            'total'        => $items->total(),
+            'current_page' => $items->currentPage(),
+            'per_page'     => $items->perPage(),
+            'last_page'    => $items->lastPage(),
+            'data'         => $items->items()
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Error occurred',
+            'error'   => $e->getMessage()
+        ], 500);
+    }
 }
 
     public function store(Request $request)

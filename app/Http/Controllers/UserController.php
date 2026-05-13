@@ -19,36 +19,99 @@ class UserController extends Controller
         ], 200);
     }
 
-    public function list(Request $request)
-    {
+// public function list(Request $request)
+// {
+//     $request->validate([
+//         'name'     => 'nullable|string|max:100',
+//         'email'    => 'nullable|string|max:100',
+//         'role'     => 'nullable|in:admin,user',
+//         'per_page' => 'nullable|integer|min:1|max:100',
+//         'sort_by'  => 'nullable|in:name,email,created_at',
+//         'sort_dir' => 'nullable|in:asc,desc',
+//     ]);
+
+//     $query = User::query();
+
+//     // Dynamic Filtering
+//     if ($request->filled('name')) {
+//         $query->where('name', 'like', '%' . $request->name . '%');
+//     }
+
+//     if ($request->filled('email')) {
+//         $query->where('email', 'like', '%' . $request->email . '%');
+//     }
+
+//     if ($request->filled('role')) {
+//         $query->where('role', $request->role);
+//     }
+
+//     // Sorting
+//     $sortBy = $request->get('sort_by', 'created_at');
+//     $sortDir = $request->get('sort_dir', 'desc');
+//     $query->orderBy($sortBy, $sortDir);
+
+//     // Pagination
+//     $perPage = $request->get('per_page', 10);
+//     $users = $query->paginate($perPage);
+
+//     return response()->json([
+//         'status'  => true,
+//         'message' => 'Users retrieved successfully',
+//         'data'    => $users,
+//     ]);
+// }
+public function list(Request $request)
+{
+    try {
         $users = User::query()
-
-            
-            ->when($request->name, function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->name . '%');
+            // Global Search
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->searchText($request->search);
             })
 
-            
-            ->when($request->email, function ($query) use ($request) {
-                $query->where('email', 'like', '%' . $request->email . '%');
-            })
-
-            
-            ->when($request->role, function ($query) use ($request) {
+            // Filter by Role
+            ->when($request->filled('role'), function ($query) use ($request) {
                 $query->where('role', $request->role);
             })
 
-            ->latest()
-            ->paginate(20);
+            // Sorting
+            ->when($request->filled('sort_by'), function ($query) use ($request) {
+                $sortBy = $request->sort_by;
+                $sortDir = $request->get('sort_dir', 'desc');
+                $allowed = ['name', 'email', 'role', 'created_at'];
+
+                if (in_array($sortBy, $allowed)) {
+                    $query->orderBy($sortBy, $sortDir);
+                }
+            }, function ($query) {
+                // Default sorting
+                $query->orderBy('_id', 'desc');
+            })
+
+            // Pagination
+            ->paginate((int) $request->get('per_page', 10));
 
         return response()->json([
-            'status'  => true,
-            'message' => 'Users retrieved successfully',
-            'data'    => $users
+            'status'       => true,
+            'message'      => 'Users retrieved successfully',
+            'total'        => $users->total(),
+            'current_page' => $users->currentPage(),
+            'per_page'     => $users->perPage(),
+            'last_page'    => $users->lastPage(),
+            'data'         => $users->items()
         ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Error occurred',
+            'error'   => $e->getMessage()
+        ], 500);
     }
+}
     
-public function store(Request $request)
+
+    public function store(Request $request)
 {
     $request->validate([
         'name'     => 'required|string|max:255',

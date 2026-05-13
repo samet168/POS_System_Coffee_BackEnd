@@ -95,7 +95,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/sizes/{id}', [SizeController::class, 'destroy']);
 
     // USER និង ADMIN ---
-    Route::middleware(['role:admin,user'])->group(function () {
+        Route::middleware(['role:admin,user'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/list', [OrderController::class, 'list']);
         Route::post('/orders', [OrderController::class, 'store']);
@@ -111,7 +111,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
 
         Route::get('/view-items', [ItemController::class, 'index']);
-        Route::get('/view-items/list', [ItemController::class, 'list']);
+    
     });
 
     });

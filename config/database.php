@@ -119,6 +119,7 @@ return [
         //     'port' => env('DB_PORT', 27017),
         //     'database' => env('DB_DATABASE'),
         // ],
+        
             'mongodb' => [
             'driver' => 'mongodb',
             'dsn' => env('DB_URI'), 

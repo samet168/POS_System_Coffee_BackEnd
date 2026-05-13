@@ -8,18 +8,30 @@ use Illuminate\Support\Facades\Validator;
 
 class ItemController extends Controller
 {
-    public function index()
-    {
-        $items = Item::with('category')
-                     ->latest()
-                     ->paginate(20);
+public function index(Request $request)
+{
+    $items = Item::with('category')
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Items retrieved successfully',
-            'data'    => $items
-        ]);
-    }
+        // search by item name
+        ->when($request->name, function ($query) use ($request) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        })
+
+        // search by category id
+        ->when($request->item_category_id, function ($query) use ($request) {
+            $query->where('item_category_id', $request->item_category_id);
+        })
+
+        ->latest()
+        ->paginate(20);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Items retrieved successfully',
+        'data'    => $items
+    ]);
+}
+
 
     public function store(Request $request)
     {

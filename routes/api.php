@@ -33,12 +33,14 @@ Route::middleware(['auth.token'])->group(function () {
     // ADMIN ---
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/user', [UserController::class, 'index']);
+        Route::get('/user/list', [UserController::class, 'list']);
         Route::post('/user', [UserController::class, 'store']);
         Route::get('/user/{id}', [UserController::class, 'show']);
         Route::post('/user/{id}', [UserController::class, 'update']);
         Route::delete('/user/{id}', [UserController::class, 'destroy']);
 
         Route::get('/item-categories', [ItemCategoryController::class, 'index']);
+        Route::get('/item-categories/list', [ItemCategoryController::class, 'list']);
         Route::post('/item-categories', [ItemCategoryController::class, 'store']);
         Route::get('/item-categories/{id}', [ItemCategoryController::class, 'show']);
         Route::post('/item-categories/{id}', [ItemCategoryController::class, 'update']);
@@ -46,6 +48,7 @@ Route::middleware(['auth.token'])->group(function () {
 
 
         Route::get('/payment-types', [PaymentTypeController::class, 'index']);
+        Route::get('/payment-types/list', [PaymentTypeController::class, 'list']);
         Route::post('/payment-types', [PaymentTypeController::class, 'store']);
         Route::get('/payment-types/{id}', [PaymentTypeController::class, 'show']);
         Route::post('/payment-types/{id}', [PaymentTypeController::class, 'update']);
@@ -58,6 +61,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/payment-statuses/{id}', [PaymentStatusController::class, 'destroy']);
 
         Route::get('/items', [ItemController::class, 'index']);
+        Route::get('/items/list', [ItemController::class, 'list']);
         Route::post('/items', [ItemController::class, 'store']);
         Route::get('/items/{id}', [ItemController::class, 'show']);
         Route::post('/items/{id}', [ItemController::class, 'update']);
@@ -70,6 +74,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/item-size-prices/{id}', [ItemSizePriceController::class, 'destroy']);
 
         Route::get('/discounts', [DiscountController::class, 'index']);
+        Route::get('/discounts/list', [DiscountController::class, 'List']);
         Route::post('/discounts', [DiscountController::class, 'store']);
         Route::get('/discounts/{id}', [DiscountController::class, 'show']);
         Route::post('/discounts/{id}', [DiscountController::class, 'update']);
@@ -96,6 +101,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 
         Route::get('/invoices', [InvoiceController::class, 'index']);
+        Route::get('/invoices/list', [InvoiceController::class, 'List']);
         Route::post('/invoices', [InvoiceController::class, 'store']);
         Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
         Route::post('/invoices/{id}', [InvoiceController::class, 'update']);

@@ -48,42 +48,47 @@ class UserController extends Controller
         ]);
     }
     
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
-            'role'     => 'nullable|in:admin,user',
-            'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email|unique:users,email',
+        'password' => 'required|min:8',
+        'role'     => 'nullable|in:admin,user',
+        'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+    ]);
 
-        $user = new User();
+    $user = new User();
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->role = $request->role ?? 'user';
+    $user->name = $request->name;
+    $user->email = $request->email;
+    $user->password = bcrypt($request->password);
+    $user->role = $request->role ?? 'user';
 
-        if ($request->hasFile('image')) {
+    // IMAGE UPLOAD
+    if ($request->hasFile('image')) {
 
-            $file = $request->file('image');
+        $file = $request->file('image');
+        $fileName = time() . '_' . rand(100000, 999999) . '.' . $file->getClientOriginalExtension();
+        $destinationPath = public_path('images/users');
 
-            $fileName = time() . '.' . $file->getClientOriginalExtension();
-
-            $file->move(public_path('images'), $fileName);
-
-            $user->image = url('images/' . $fileName);
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
         }
 
-        $user->save();
+        $file->move($destinationPath, $fileName);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'User created successfully',
-            'data' => $user
-        ], 201);
+        $user->image = url('images/users/' . $fileName);
     }
+
+    $user->save();
+
+    return response()->json([
+        'status' => true,
+        'message' => 'User created successfully',
+        'data' => $user
+    ], 201);
+}
 
     
     public function show($id)

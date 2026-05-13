@@ -19,6 +19,34 @@ class UserController extends Controller
         ], 200);
     }
 
+    public function list(Request $request)
+    {
+        $users = User::query()
+
+            
+            ->when($request->name, function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->name . '%');
+            })
+
+            
+            ->when($request->email, function ($query) use ($request) {
+                $query->where('email', 'like', '%' . $request->email . '%');
+            })
+
+            
+            ->when($request->role, function ($query) use ($request) {
+                $query->where('role', $request->role);
+            })
+
+            ->latest()
+            ->paginate(20);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Users retrieved successfully',
+            'data'    => $users
+        ]);
+    }
     
     public function store(Request $request)
     {

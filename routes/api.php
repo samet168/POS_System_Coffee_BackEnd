@@ -68,6 +68,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/items/{id}', [ItemController::class, 'destroy']);
 
         Route::get('/item-size-prices', [ItemSizePriceController::class, 'index']);
+        Route::get('/item-size-prices/list', [ItemSizePriceController::class, 'List']);
         Route::post('/item-size-prices', [ItemSizePriceController::class, 'store']);
         Route::get('/item-size-prices/{id}', [ItemSizePriceController::class, 'show']);
         Route::post('/item-size-prices/{id}', [ItemSizePriceController::class, 'update']);
@@ -81,6 +82,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/discounts/{id}', [DiscountController::class, 'destroy']);
 
         Route::get('/order_items', [OrderItemController::class, 'index']);
+        Route::get('/order_items/list', [OrderItemController::class, 'list']);
         Route::post('/order_items', [OrderItemController::class, 'store']);
         Route::get('/order_items/{id}', [OrderItemController::class, 'show']);
         Route::post('/order_items/{id}', [OrderItemController::class, 'update']);
@@ -95,6 +97,7 @@ Route::middleware(['auth.token'])->group(function () {
     // USER និង ADMIN ---
     Route::middleware(['role:admin,user'])->group(function () {
         Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/list', [OrderController::class, 'list']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}', [OrderController::class, 'update']);
@@ -108,6 +111,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
 
         Route::get('/view-items', [ItemController::class, 'index']);
+        Route::get('/view-items/list', [ItemController::class, 'list']);
     });
 
     });

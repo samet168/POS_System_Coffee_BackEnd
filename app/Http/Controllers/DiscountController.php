@@ -17,6 +17,27 @@ class DiscountController extends Controller
         ]);
     }
 
+    public function list(Request $request)
+    {
+        $discounts = Discount::query()
+
+            ->when($request->name, function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->name . '%');
+            })
+
+            ->when($request->type, function ($query) use ($request) {
+                $query->where('type', $request->type);
+            })
+
+            ->latest()
+            ->paginate(20);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Discounts retrieved successfully',
+            'data'    => $discounts
+        ]);
+    }
     public function store(Request $request)
     {
         $request->validate([

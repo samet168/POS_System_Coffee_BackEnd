@@ -28,7 +28,43 @@ class ItemSizePriceController extends Controller
         ]);
     }
 
-   
+   public function list(Request $request)
+    {
+        $itemSizePrices = ItemSizePrice::with(['item', 'size'])
+
+            // search by item name
+            ->when($request->item_name, function ($query) use ($request) {
+                $query->whereHas('item', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->item_name . '%');
+                });
+            })
+
+            // search by size name
+            ->when($request->size_name, function ($query) use ($request) {
+                $query->whereHas('size', function ($q) use ($request) {
+                    $q->where('name', 'like', '%' . $request->size_name . '%');
+                });
+            })
+
+            // filter by item_id
+            ->when($request->item_id, function ($query) use ($request) {
+                $query->where('item_id', $request->item_id);
+            })
+
+            // filter by size_id
+            ->when($request->size_id, function ($query) use ($request) {
+                $query->where('size_id', $request->size_id);
+            })
+
+            ->latest()
+            ->paginate(20);
+
+        return response()->json([
+            'status'  => true,
+            'message' => 'Item size prices retrieved successfully',
+            'data'    => $itemSizePrices
+        ]);
+    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

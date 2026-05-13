@@ -14,6 +14,24 @@ class ItemCategoryController extends Controller
             'data' => $categories
         ], 200);
     }
+    public function list(Request $request)
+{
+    $categories = ItemCategory::query()
+
+       
+        ->when($request->name, function ($query) use ($request) {
+            $query->where('name', 'like', '%' . $request->name . '%');
+        })
+
+        ->latest()
+        ->paginate(20);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Item categories retrieved successfully',
+        'data'    => $categories
+    ]);
+}
 
     public function store(Request $request)
     {

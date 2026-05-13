@@ -22,10 +22,10 @@ public function index()
     ]);
 }
 
+
 // public function list(Request $request)
 // {
 //     try {
-//         // ទាញ Category ទាំងអស់
 //         $categories = ItemCategory::latest()->get();
 
 //         $result = [];
@@ -33,35 +33,48 @@ public function index()
 //         foreach ($categories as $category) {
 //             $query = Item::query();
 
-//             // Filter Items តាម Category
 //             $query->where('item_category_id', $category->_id)
 //                   ->orWhere('item_category_id', (string)$category->_id);
 
-//             // Global Search
 //             if ($request->filled('search')) {
 //                 $query->searchText($request->search);
 //             }
 
-//             // Filter by Status
 //             if ($request->filled('status')) {
 //                 $query->where('status', $request->status);
 //             }
 
-//             $items = $query->orderBy('name', 'asc')->get();
+//             $items = $query->with(['category', 'sizePrices.size'])
+//                            ->orderBy('name', 'asc')
+//                            ->get();
 
 //             $result[] = [
 //                 'category_id'   => (string)$category->_id,
 //                 'category_name' => $category->name,
 //                 'items_count'   => $items->count(),
-//                 'items'         => $items->load('category')   
+//                 'items'         => $items->map(function ($item) {
+//                     return [
+//                         'id'     => $item->id,
+//                         'name'   => $item->name,
+//                         'image'  => $item->image,
+//                         'status' => $item->status,
+//                         'prices' => $item->sizePrices->map(function ($price) {
+//                             return [
+//                                 'size'  => $price->size->size_name ?? null,
+//                                 'code'  => $price->size->size_code ?? null,
+//                                 'price' => $price->price,
+//                             ];
+//                         }),
+//                     ];
+//                 }),
 //             ];
 //         }
 
 //         return response()->json([
-//             'status'  => true,
-//             'message' => 'Items retrieved successfully by category',
+//             'status'           => true,
+//             'message'          => 'Items retrieved successfully by category',
 //             'total_categories' => count($result),
-//             'data'    => $result
+//             'data'             => $result
 //         ]);
 
 //     } catch (\Exception $e) {
@@ -72,69 +85,128 @@ public function index()
 //         ], 500);
 //     }
 // }
+// public function list(Request $request)
+// {
+//     try {
+//         $categories = ItemCategory::latest()->get();
+
+//         $result = [];
+
+//         foreach ($categories as $category) {
+
+//             $query = Item::query()
+//                 ->where(function ($q) use ($category) {
+//                     $q->where('item_category_id', $category->_id)
+//                       ->orWhere('item_category_id', (string)$category->_id);
+//                 });
+
+//             // search (safe grouping)
+//             if ($request->filled('search')) {
+//                 $search = $request->search;
+
+//                 $query->where(function ($q) use ($search) {
+//                     $q->where('name', 'like', "%$search%");
+//                 });
+//             }
+
+//             // status filter
+//             if ($request->filled('status')) {
+//                 $query->where('status', $request->status);
+//             }
+
+//             $items = $query->with(['category', 'sizePrices.size'])
+//                            ->orderBy('name', 'asc')
+//                            ->get();
+
+//             $result[] = [
+//                 'category_id'   => (string)$category->_id,
+//                 'category_name' => $category->name,
+//                 'items_count'   => $items->count(),
+//                 'items'         => $items->map(function ($item) {
+//                     return [
+//                         'id'     => $item->id,
+//                         'name'   => $item->name,
+//                         'image'  => $item->image,
+//                         'status' => $item->status,
+//                         'prices' => $item->sizePrices->map(function ($price) {
+//                             return [
+//                                 'size'  => $price->size->size_name ?? null,
+//                                 'code'  => $price->size->size_code ?? null,
+//                                 'price' => $price->price,
+//                             ];
+//                         }),
+//                     ];
+//                 }),
+//             ];
+//         }
+
+//         return response()->json([
+//             'status'           => true,
+//             'message'          => 'Items retrieved successfully by category',
+//             'total_categories' => count($result),
+//             'data'             => $result
+//         ]);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Error occurred',
+//             'error'   => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
 public function list(Request $request)
 {
     try {
-        $categories = ItemCategory::latest()->get();
+        $categories = ItemCategory::with(['items' => function ($query) use ($request) {
 
-        $result = [];
-
-        foreach ($categories as $category) {
-            $query = Item::query();
-
-            $query->where('item_category_id', $category->_id)
-                  ->orWhere('item_category_id', (string)$category->_id);
+            $query->with(['category', 'sizePrices.size'])
+                  ->orderBy('name', 'asc');
 
             if ($request->filled('search')) {
-                $query->searchText($request->search);
+                $query->where('name', 'like', "%{$request->search}%");
             }
 
             if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
-
-            $items = $query->with(['category', 'sizePrices.size'])
-                           ->orderBy('name', 'asc')
-                           ->get();
-
-            $result[] = [
-                'category_id'   => (string)$category->_id,
-                'category_name' => $category->name,
-                'items_count'   => $items->count(),
-                'items'         => $items->map(function ($item) {
-                    return [
-                        'id'     => $item->id,
-                        'name'   => $item->name,
-                        'image'  => $item->image,
-                        'status' => $item->status,
-                        'prices' => $item->sizePrices->map(function ($price) {
-                            return [
-                                'size'  => $price->size->size_name ?? null,
-                                'code'  => $price->size->size_code ?? null,
-                                'price' => $price->price,
-                            ];
-                        }),
-                    ];
-                }),
-            ];
-        }
+        }])->latest()->get();
 
         return response()->json([
-            'status'           => true,
-            'message'          => 'Items retrieved successfully by category',
-            'total_categories' => count($result),
-            'data'             => $result
+            'status' => true,
+            'message' => 'Items by category',
+            'data' => $categories->map(function ($category) {
+                return [
+                    'category_id'   => $category->id,
+                    'category_name' => $category->name,
+                    'items_count'   => $category->items->count(),
+                    'items' => $category->items->map(function ($item) {
+                        return [
+                            'id'     => $item->id,
+                            'name'   => $item->name,
+                            'image'  => $item->image,
+                            'status' => $item->status,
+                            'prices' => $item->sizePrices->map(function ($price) {
+                                return [
+                                    'size'  => $price->size->size_name ?? null,
+                                    'code'  => $price->size->size_code ?? null,
+                                    'price' => $price->price,
+                                ];
+                            }),
+                        ];
+                    })
+                ];
+            })
         ]);
 
     } catch (\Exception $e) {
         return response()->json([
-            'status'  => false,
-            'message' => 'Error occurred',
-            'error'   => $e->getMessage()
+            'status' => false,
+            'message' => $e->getMessage()
         ], 500);
     }
 }
-
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

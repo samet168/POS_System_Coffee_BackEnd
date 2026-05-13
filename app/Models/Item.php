@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use MongoDB\Laravel\Eloquent\Model as MongoModel;
+use App\Models\ItemSizePrice;
 
 class Item extends MongoModel
 {
@@ -22,5 +23,9 @@ class Item extends MongoModel
     public function category()
     {
         return $this->belongsTo(ItemCategory::class, 'item_category_id', '_id');
+    }
+    public function sizePrices()
+    {
+        return $this->hasMany(ItemSizePrice::class, 'item_id');
     }
 }

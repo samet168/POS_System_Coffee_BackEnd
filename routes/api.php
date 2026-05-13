@@ -111,6 +111,7 @@ Route::middleware(['auth.token'])->group(function () {
         Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
 
         Route::get('/view-items', [ItemController::class, 'index']);
+        Route::get('/view-items/list', [ItemController::class, 'list']);
     
     });
 

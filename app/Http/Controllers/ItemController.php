@@ -6,6 +6,7 @@ use App\Models\Item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\ItemCategory;
+use Illuminate\Support\Facades\Storage;
 
 class ItemController extends Controller
 {
@@ -156,57 +157,57 @@ public function index()
 //     }
 // }
 
-public function list(Request $request)
-{
-    try {
-        $categories = ItemCategory::with(['items' => function ($query) use ($request) {
+    public function list(Request $request)
+    {
+        try {
+            $categories = ItemCategory::with(['items' => function ($query) use ($request) {
 
-            $query->with(['category', 'sizePrices.size'])
-                  ->orderBy('name', 'asc');
+                $query->with(['category', 'sizePrices.size'])
+                    ->orderBy('name', 'asc');
 
-            if ($request->filled('search')) {
-                $query->where('name', 'like', "%{$request->search}%");
-            }
+                if ($request->filled('search')) {
+                    $query->where('name', 'like', "%{$request->search}%");
+                }
 
-            if ($request->filled('status')) {
-                $query->where('status', $request->status);
-            }
-        }])->latest()->get();
+                if ($request->filled('status')) {
+                    $query->where('status', $request->status);
+                }
+            }])->latest()->get();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Items by category',
-            'data' => $categories->map(function ($category) {
-                return [
-                    'category_id'   => $category->id,
-                    'category_name' => $category->name,
-                    'items_count'   => $category->items->count(),
-                    'items' => $category->items->map(function ($item) {
-                        return [
-                            'id'     => $item->id,
-                            'name'   => $item->name,
-                            'image'  => $item->image,
-                            'status' => $item->status,
-                            'prices' => $item->sizePrices->map(function ($price) {
-                                return [
-                                    'size'  => $price->size->size_name ?? null,
-                                    'code'  => $price->size->size_code ?? null,
-                                    'price' => $price->price,
-                                ];
-                            }),
-                        ];
-                    })
-                ];
-            })
-        ]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Items by category',
+                'data' => $categories->map(function ($category) {
+                    return [
+                        'category_id'   => $category->id,
+                        'category_name' => $category->name,
+                        'items_count'   => $category->items->count(),
+                        'items' => $category->items->map(function ($item) {
+                            return [
+                                'id'     => $item->id,
+                                'name'   => $item->name,
+                                'image'  => $item->image,
+                                'status' => $item->status,
+                                'prices' => $item->sizePrices->map(function ($price) {
+                                    return [
+                                        'size'  => $price->size->size_name ?? null,
+                                        'code'  => $price->size->size_code ?? null,
+                                        'price' => $price->price,
+                                    ];
+                                }),
+                            ];
+                        })
+                    ];
+                })
+            ]);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => false,
-            'message' => $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
-}
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -249,6 +250,65 @@ public function list(Request $request)
         ], 201);
     }
 
+
+// public function store(Request $request)
+// {
+//     $validator = Validator::make($request->all(), [
+//         'item_category_id' => 'required|exists:item_categories,id',
+//         'name'             => 'required|string|max:255',
+//         'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+//         'status'           => 'nullable|in:In Stock,Out of Stock',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json([
+//             'status'  => false,
+//             'message' => 'Validation failed',
+//             'errors'  => $validator->errors()
+//         ], 422);
+//     }
+
+//     $data = $request->only(['item_category_id', 'name', 'status']);
+
+//     // =========================
+//     // IMAGE UPLOAD (AWS + LOCAL)
+//     // =========================
+//     if ($request->hasFile('image')) {
+
+//         $file = $request->file('image');
+//         $fileName = 'items/' . time() . '_' . rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
+
+//         try {
+//             // 👉 Upload to AWS S3 first
+//             $path = $file->storeAs('items', basename($fileName), 's3');
+
+//             Storage::disk('s3')->setVisibility($path, 'public');
+
+//             $data['image'] = Storage::disk('s3')->url($path);
+
+//         } catch (\Exception $e) {
+
+//             // 👉 fallback to local storage
+//             $destinationPath = public_path('images/items');
+
+//             if (!file_exists($destinationPath)) {
+//                 mkdir($destinationPath, 0755, true);
+//             }
+
+//             $file->move($destinationPath, basename($fileName));
+
+//             $data['image'] = url('images/items/' . basename($fileName));
+//         }
+//     }
+
+//     $item = Item::create($data);
+
+//     return response()->json([
+//         'status'  => true,
+//         'message' => 'Item created successfully',
+//         'data'    => $item->load('category')
+//     ], 201);
+// }
     public function show($id)
     {
         $item = Item::with('category')->find($id);

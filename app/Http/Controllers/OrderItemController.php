@@ -101,34 +101,83 @@ class OrderItemController extends Controller
     //         'data' => $orderItems
     //     ]);
     // }
+    // public function store(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'order_id'     => "nullable",
+    //         'item_id'      => 'required|exists:items,id',
+    //         'size_id'      => 'nullable|exists:sizes,id',
+    //         'ice_level'    => 'nullable|in:low,medium,high',
+    //         'sugar_level'  => 'nullable|in:0%,25%,50%,75%,100%',
+    //         'quantity'     => 'required|integer|min:1',
+    //         'unit_price'   => 'required|numeric|min:0',
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status'  => false,
+    //             'message' => 'Validation failed',
+    //             'errors'  => $validator->errors()
+    //         ], 422);
+    //     }
+
+    //     $orderItem = OrderItem::create($request->all());
+
+    //     return response()->json([
+    //         'status'  => true,
+    //         'message' => 'Order item created successfully',
+    //         'data'    => $orderItem->load(['item', 'size'])
+    //     ], 201);
+    // }
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'order_id'     => 'required|exists:orders,id',
-            'item_id'      => 'required|exists:items,id',
-            'size_id'      => 'nullable|exists:sizes,id',
-            'ice_level'    => 'nullable|in:low,medium,high',
-            'sugar_level'  => 'nullable|in:0%,25%,50%,75%,100%',
-            'quantity'     => 'required|integer|min:1',
-            'unit_price'   => 'required|numeric|min:0',
-        ]);
+{
+    $validator = Validator::make($request->all(), [
+        'order_id'     => 'nullable|exists:orders,id',
+        'item_id'      => 'required|exists:items,id',
+        'size_id'      => 'nullable|exists:sizes,id',
+        'ice_level'    => 'nullable|in:low,medium,high',
+        'sugar_level'  => 'nullable|in:0%,25%,50%,75%,100%',
+        'quantity'     => 'required|integer|min:1',
+        'unit_price'   => 'required|numeric|min:0',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        $orderItem = OrderItem::create($request->all());
-
+    if ($validator->fails()) {
         return response()->json([
-            'status'  => true,
-            'message' => 'Order item created successfully',
-            'data'    => $orderItem->load(['item', 'size'])
-        ], 201);
+            'status'  => false,
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors()
+        ], 422);
     }
+
+    // បើ order_id មិនបានផ្ញើមក យើងបង្កើត Order ថ្មីស្វ័យប្រវត្តិ
+    $orderId = $request->order_id;
+
+    if (!$orderId) {
+        $order = \App\Models\Order::create([
+            'user_id'       => auth()->id() ?? 1, 
+            'table_number'  => 'T1',                     
+            'status'        => 'pending',
+            'total_amount'  => 0,
+        ]);
+        $orderId = $order->id;
+    }
+
+    $orderItem = OrderItem::create([
+        'order_id'     => $orderId,
+        'item_id'      => $request->item_id,
+        'size_id'      => $request->size_id,
+        'ice_level'    => $request->ice_level,
+        'sugar_level'  => $request->sugar_level,
+        'quantity'     => $request->quantity,
+        'unit_price'   => $request->unit_price,
+    ]);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Order item created successfully',
+        'data'    => $orderItem->load(['item', 'size'])
+    ], 201);
+}
 
 
     public function show($id)
@@ -185,6 +234,29 @@ class OrderItemController extends Controller
             'data'    => $orderItem->fresh()->load(['item', 'size'])
         ]);
     }
+// public function update(Request $request, $id)
+// {
+//     $orderItem = OrderItem::find($id);
+//     if (!$orderItem) return response()->json(['message' => 'Not found'], 404);
+
+//     $validator = Validator::make($request->all(), [
+//         'quantity' => 'required|integer|min:1',
+//         'unit_price' => 'required|numeric'
+//     ]);
+
+//     if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
+
+//     // គណនាឡើងវិញ
+//     $data = $request->all();
+//     $data['sub_total'] = $data['quantity'] * $data['unit_price'];
+
+//     $orderItem->update($data);
+
+//     return response()->json([
+//         'status' => true,
+//         'data' => $orderItem->fresh()->load(['item', 'size'])
+//     ]);
+// }
 
 
     public function destroy($id)

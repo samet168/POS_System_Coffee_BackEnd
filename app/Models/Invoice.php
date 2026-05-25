@@ -9,15 +9,6 @@ class Invoice extends Model
     protected $connection = 'mongodb';
     protected $collection = 'invoices';
 
-    // protected $fillable = [
-    //     'order_id',
-    //     'invoice_no',
-    //     'payment_status_id',
-    //     'payment_type_id',
-    //     'total_paid',
-    //     'change_amount',
-    //     'issued_at'
-    // ];
     protected $fillable = [
         'order_ids', // Array នៃ IDs
         'invoice_no',
@@ -30,7 +21,7 @@ class Invoice extends Model
 
     public function order()
     {
-        return $this->belongsTo(Order::class, 'order_id');
+        return $this->belongsTo(OrderItem::class, 'order_id');
     }
 
     public function paymentStatus()

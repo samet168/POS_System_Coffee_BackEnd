@@ -4,10 +4,112 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 class UserController extends Controller
 {
     
+public function profile(Request $request)
+    {
+        return response()->json([
+            'status' => true,
+            'data' => $request->user()
+        ]);
+    }
+
+    // ================= UPDATE PROFILE =================
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        // VALIDATION
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email,' . $user->id,
+            'password' => 'nullable|min:6',
+            'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        // UPDATE BASIC INFO
+        $user->name = $request->name;
+        $user->email = $request->email;
+
+        // PASSWORD (OPTIONAL)
+        if ($request->filled('password')) {
+            $user->password = bcrypt($request->password);
+        }
+
+        // ================= IMAGE =================
+        if ($request->hasFile('image')) {
+
+            // DELETE OLD IMAGE
+            if ($user->image) {
+                $oldPath = public_path(parse_url($user->image, PHP_URL_PATH));
+
+                if (File::exists($oldPath)) {
+                    File::delete($oldPath);
+                }
+            }
+
+            // UPLOAD NEW IMAGE
+            $file = $request->file('image');
+            $fileName = time() . '_' . rand(1000,9999) . '.' . $file->getClientOriginalExtension();
+
+            $file->move(public_path('images/users'), $fileName);
+
+            $user->image = url('images/users/' . $fileName);
+        }
+
+        $user->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Profile updated successfully',
+            'data' => $user
+        ]);
+    }
+
+public function changePassword(Request $request)
+{
+    try {
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|min:6',
+            'confirm_password' => 'required|same:new_password',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Unauthenticated'
+            ], 401);
+        }
+
+        // check current password
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'message' => 'Current password is wrong'
+            ], 400);
+        }
+
+        // update password
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password changed successfully'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
     public function index()
     {
         $users = User::all();
@@ -19,47 +121,7 @@ class UserController extends Controller
         ], 200);
     }
 
-// public function list(Request $request)
-// {
-//     $request->validate([
-//         'name'     => 'nullable|string|max:100',
-//         'email'    => 'nullable|string|max:100',
-//         'role'     => 'nullable|in:admin,user',
-//         'per_page' => 'nullable|integer|min:1|max:100',
-//         'sort_by'  => 'nullable|in:name,email,created_at',
-//         'sort_dir' => 'nullable|in:asc,desc',
-//     ]);
 
-//     $query = User::query();
-
-//     // Dynamic Filtering
-//     if ($request->filled('name')) {
-//         $query->where('name', 'like', '%' . $request->name . '%');
-//     }
-
-//     if ($request->filled('email')) {
-//         $query->where('email', 'like', '%' . $request->email . '%');
-//     }
-
-//     if ($request->filled('role')) {
-//         $query->where('role', $request->role);
-//     }
-
-//     // Sorting
-//     $sortBy = $request->get('sort_by', 'created_at');
-//     $sortDir = $request->get('sort_dir', 'desc');
-//     $query->orderBy($sortBy, $sortDir);
-
-//     // Pagination
-//     $perPage = $request->get('per_page', 10);
-//     $users = $query->paginate($perPage);
-
-//     return response()->json([
-//         'status'  => true,
-//         'message' => 'Users retrieved successfully',
-//         'data'    => $users,
-//     ]);
-// }
 public function list(Request $request)
 {
     try {
@@ -111,47 +173,63 @@ public function list(Request $request)
 }
     
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|min:8',
-            'role'     => 'nullable|in:admin,user',
-            'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-        ]);
 
-        $user = new User();
+public function store(Request $request)
+{
+    $request->validate([
+        'name'     => 'required|string|max:255',
+        'email'    => 'required|email|unique:users,email',
+        'password' => 'required|min:8',
+        'role'     => 'nullable|in:admin,user',
+        'image'    => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+    ]);
 
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->role = $request->role ?? 'user';
+    $user = new User();
 
-        // IMAGE UPLOAD
-        if ($request->hasFile('image')) {
+    $user->name = $request->name;
+    $user->email = $request->email;
+    $user->password = bcrypt($request->password);
+    $user->role = $request->role ?? 'user';
 
-            $file = $request->file('image');
-            $fileName = time() . '_' . rand(100000, 999999) . '.' . $file->getClientOriginalExtension();
+    // =========================
+    // IMAGE UPLOAD (AWS + LOCAL)
+    // =========================
+    if ($request->hasFile('image')) {
+
+        $file = $request->file('image');
+        $fileName = 'users/' . time() . '_' . rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
+
+        try {
+            // 👉 Upload to AWS S3
+            $path = $file->storeAs('users', basename($fileName), 's3');
+
+            Storage::disk('s3')->setVisibility($path, 'public');
+
+            $user->image = Storage::disk('s3')->url($path);
+
+        } catch (\Exception $e) {
+
+            // 👉 fallback to local
             $destinationPath = public_path('images/users');
 
             if (!file_exists($destinationPath)) {
                 mkdir($destinationPath, 0755, true);
             }
 
-            $file->move($destinationPath, $fileName);
+            $file->move($destinationPath, basename($fileName));
 
-            $user->image = url('images/users/' . $fileName);
+            $user->image = url('images/users/' . basename($fileName));
         }
-
-        $user->save();
-
-        return response()->json([
-            'status' => true,
-            'message' => 'User created successfully',
-            'data' => $user
-        ], 201);
     }
+
+    $user->save();
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'User created successfully',
+        'data'    => $user
+    ], 201);
+}
 
     
     public function show($id)

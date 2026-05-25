@@ -47,57 +47,57 @@ class OrderController extends Controller
 //     ]);
 // }
 
-public function list(Request $request)
-{
-    try {
-        $query = Order::with(['user', 'discount']);
+    public function list(Request $request)
+    {
+        try {
+            $query = Order::with(['user', 'discount']);
 
-        if ($request->filled('user_id')) {
-            $query->where('user_id', $request->user_id);
+            if ($request->filled('user_id')) {
+                $query->where('user_id', $request->user_id);
+            }
+
+
+            if ($request->filled('discount_id')) {
+                $query->where('discount_id', $request->discount_id);
+            }
+
+
+            if ($request->filled('table_number')) {
+                $query->where('table_number', 'like', '%' . $request->table_number . '%');
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function ($q) use ($search) {
+                    $q->where('table_number', 'like', '%' . $search . '%')
+                    ->orWhereHas('user', function ($user) use ($search) {
+                        $user->where('name', 'like', '%' . $search . '%')
+                            ->orWhere('phone', 'like', '%' . $search . '%');
+                    });
+                });
+            }
+
+            $orders = $query->latest()
+                            ->paginate(10);
+
+            return response()->json([
+                'status'       => true,
+                'message'      => 'Orders retrieved successfully',
+                'total'        => $orders->total(),
+                'current_page' => $orders->currentPage(),
+                'per_page'     => $orders->perPage(),
+                'last_page'    => $orders->lastPage(),
+                'data'         => $orders->items()
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Error occurred',
+                'error'   => $e->getMessage()
+            ], 500);
         }
-
-
-        if ($request->filled('discount_id')) {
-            $query->where('discount_id', $request->discount_id);
-        }
-
-
-        if ($request->filled('table_number')) {
-            $query->where('table_number', 'like', '%' . $request->table_number . '%');
-        }
-
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('table_number', 'like', '%' . $search . '%')
-                  ->orWhereHas('user', function ($user) use ($search) {
-                      $user->where('name', 'like', '%' . $search . '%')
-                           ->orWhere('phone', 'like', '%' . $search . '%');
-                  });
-            });
-        }
-
-        $orders = $query->latest()
-                        ->paginate(10);
-
-        return response()->json([
-            'status'       => true,
-            'message'      => 'Orders retrieved successfully',
-            'total'        => $orders->total(),
-            'current_page' => $orders->currentPage(),
-            'per_page'     => $orders->perPage(),
-            'last_page'    => $orders->lastPage(),
-            'data'         => $orders->items()
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status'  => false,
-            'message' => 'Error occurred',
-            'error'   => $e->getMessage()
-        ], 500);
     }
-}
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

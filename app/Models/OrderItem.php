@@ -49,6 +49,14 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Order::class);
     }
+        public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class, 'order_id');
+    }
+    public function invoice()
+    {
+        return $this->hasOne(Invoice::class);
+    }
 
 
     // ==================== Auto Calculate Sub Total ====================

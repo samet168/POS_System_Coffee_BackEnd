@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Dashboard\dashobardController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\IceLevelController;
 use App\Http\Controllers\InvoiceController;
@@ -32,6 +33,9 @@ Route::middleware(['auth.token'])->group(function () {
 
     // ADMIN ---
     Route::middleware(['role:admin'])->group(function () {
+
+        Route::get('/dashboard/stats', [dashobardController ::class, 'stats']);
+
         Route::get('/user', [UserController::class, 'index']);
         Route::get('/user/list', [UserController::class, 'list']);
         Route::post('/user', [UserController::class, 'store']);
@@ -112,6 +116,10 @@ Route::middleware(['auth.token'])->group(function () {
 
         Route::get('/view-items', [ItemController::class, 'index']);
         Route::get('/view-items/list', [ItemController::class, 'list']);
+
+        Route::get('/profile', [UserController::class, 'profile']);
+        Route::post('/profile/update', [UserController::class, 'updateProfile']);
+        Route::post('/change-password', [UserController::class, 'changePassword']);
     
     });
 

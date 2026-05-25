@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,85 +29,76 @@ public function index()
             'data' => $invoices
         ], 200);
     }
+    // public function list(Request $request)
+    // {
+    //     $invoices = Invoice::query()
+
+    //         ->when($request->invoice_no, function ($query) use ($request) {
+    //             $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
+    //         })
+
+    //         ->when($request->payment_status_id, function ($query) use ($request) {
+    //             $query->where('payment_status_id', $request->payment_status_id);
+    //         })
+
+    //         ->when($request->payment_type_id, function ($query) use ($request) {
+    //             $query->where('payment_type_id', $request->payment_type_id);
+    //         })
+
+    //         ->when($request->date_from && $request->date_to, function ($query) use ($request) {
+    //             $query->whereBetween('created_at', [$request->date_from, $request->date_to]);
+    //         })
+
+    //         ->latest()
+    //         ->paginate(20);
+
+    //     return response()->json([
+    //         'status'  => true,
+    //         'message' => 'Invoices retrieved successfully',
+    //         'data'    => $invoices
+    //     ]);
+    // }
+
     public function list(Request $request)
 {
-    $invoices = Invoice::query()
+    $query = Invoice::query();
 
-        ->when($request->invoice_no, function ($query) use ($request) {
-            $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
-        })
+    if ($request->date_from)
+        $query->whereDate('created_at', '>=', $request->date_from);
 
-        ->when($request->payment_status_id, function ($query) use ($request) {
-            $query->where('payment_status_id', $request->payment_status_id);
-        })
-
-        ->when($request->payment_type_id, function ($query) use ($request) {
-            $query->where('payment_type_id', $request->payment_type_id);
-        })
-
-        ->when($request->date_from && $request->date_to, function ($query) use ($request) {
-            $query->whereBetween('created_at', [$request->date_from, $request->date_to]);
-        })
-
-        ->latest()
-        ->paginate(20);
+    if ($request->date_to)
+        $query->whereDate('created_at', '<=', $request->date_to);
 
     return response()->json([
-        'status'  => true,
-        'message' => 'Invoices retrieved successfully',
-        'data'    => $invoices
+        'status' => true,
+        'data'   => $query->latest()->paginate(10),
     ]);
 }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'order_ids'         => 'required|array|min:1', 
-            'order_ids.*'       => 'exists:orders,_id',
-            'payment_status_id' => 'required',
-            'payment_type_id'   => 'required',
-            'total_paid'        => 'required|numeric|min:0',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'order_ids'       => 'required|array',
+        'payment_type_id' => 'required|integer',
+        'total_paid'      => 'required|numeric',
+    ]);
 
-        try {
-        
-            $orders = Order::whereIn('_id', $request->order_ids)->get();
-            
+    $orders      = OrderItem::whereIn('id', $request->order_ids)->get();
+    $totalAmount = $orders->sum('sub_total');
 
-            $totalAmountAllOrders = $orders->sum('total_amount');
+    $invoice = Invoice::create([
+        'invoice_no'      => 'INV-' . time(),
+        'total_amount'    => $totalAmount,
+        'total_paid'      => $request->total_paid,
+        'payment_type_id' => $request->payment_type_id,
+        'change_amount'   => $request->total_paid - $totalAmount,
+    ]);
 
-            $changeAmount = max(0, $request->total_paid - $totalAmountAllOrders);
+    // ✅ លុប order_items បន្ទាប់ពីបង្កើត invoice
+    OrderItem::whereIn('id', $request->order_ids)->delete();
 
-        
-            $invoice = Invoice::create([
-                'order_ids'         => $request->order_ids,
-                'invoice_no'        => 'INV-' . time() . rand(100, 999),
-                'payment_status_id' => $request->payment_status_id,
-                'payment_type_id'   => $request->payment_type_id,
-                'total_amount'      => $totalAmountAllOrders,
-                'total_paid'        => $request->total_paid,
-                'change_amount'     => $changeAmount,
-            ]);
-
-    
-            Order::whereIn('_id', $request->order_ids)->update([
-                'order_status_id' => $request->payment_status_id 
-            ]);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Invoice created successfully for ' . $orders->count() . ' orders',
-                'data' => $invoice
-            ], 201);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Failed to create invoice',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
+    return response()->json(['status' => true, 'data' => $invoice]);
+}
 
     public function show($id)
     {

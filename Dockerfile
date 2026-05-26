@@ -36,11 +36,10 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev pkg-config libssl-dev
 
 # ================= ដំឡើង PHP Extensions =================
-# បើក PDO MySQL, string handling, image, background process, math, GD image
 RUN docker-php-ext-install \
     pdo_mysql mbstring exif pcntl bcmath gd
 
-# ================= MongoDB Extension (បើប្រើ MongoDB) =================
+# ================= MongoDB Extension =================
 RUN pecl install mongodb && docker-php-ext-enable mongodb
 
 # ================= ដំឡើង Composer =================
@@ -49,24 +48,23 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # ================= កំណត់ទីតាំង project =================
 WORKDIR /var/www/html
 
-# copy code ទាំងអស់ចូល container
+# ចម្លងកូដចូល container
 COPY . .
 
 # ================= ដំឡើង Laravel dependencies =================
-RUN composer install --no-dev --optimize-autoloader
-
-# ================= clear cache Laravel =================
-RUN php artisan config:clear && \
-    php artisan route:clear && \
-    php artisan view:clear
+# បន្ថែម --no-interaction ដើម្បីកុំឱ្យវាទាមទារការចុច Yes/No ពេល build
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # ================= កំណត់ permission =================
-# អោយ storage និង cache អាច write បាន
 RUN chown -R www-data:www-data /var/www/html/storage \
     /var/www/html/bootstrap/cache
 
 # ================= បើក port សម្រាប់ Render =================
 EXPOSE 10000
 
-# ================= run Laravel server =================
-CMD php artisan serve --host=0.0.0.0 --port=10000
+# ================= Run Laravel Server =================
+# យើងដាក់ឱ្យវា Optimize និង Clear Cache មុនពេលរត់ Server តែម្តង
+CMD php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php artisan serve --host=0.0.0.0 --port=10000

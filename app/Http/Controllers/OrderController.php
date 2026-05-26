@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Item;
 use App\Models\Order;
+use App\Models\OrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -98,31 +100,34 @@ class OrderController extends Controller
             ], 500);
         }
     }
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'discount_id'  => 'nullable|exists:discounts,id',
-            'total_amount' => 'required|numeric|min:0',
-            'table_number' => 'nullable|string|max:20',
-            'user_id'      => 'required|exists:users,id',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'order_id' => 'required',
+        'item_id' => 'required',
+        'size_id' => 'required',
+        'ice_level' => 'required',
+        'sugar_level' => 'required',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
+    $item = Item::find($request->item_id);
 
-        $order = Order::create($request->all());
+    OrderItem::create([
+        'order_id' => $request->order_id,
+        'item_id' => $request->item_id,
+        'size_id' => $request->size_id,
+        'ice_level' => $request->ice_level,
+        'sugar_level' => $request->sugar_level,
+        'unit_price' => $item->price,
+        'quantity' => 1,
+        'sub_total' => $item->price,
+    ]);
 
-        return response()->json([
-            'status'  => true,
-            'message' => 'Order created successfully',
-            'data'    => $order
-        ], 201);
-    }
+    return response()->json([
+        'status' => true,
+        'message' => 'Created successfully'
+    ]);
+}
 
 
     public function show($id)

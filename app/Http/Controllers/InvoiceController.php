@@ -29,35 +29,7 @@ public function index()
             'data' => $invoices
         ], 200);
     }
-    // public function list(Request $request)
-    // {
-    //     $invoices = Invoice::query()
 
-    //         ->when($request->invoice_no, function ($query) use ($request) {
-    //             $query->where('invoice_no', 'like', '%' . $request->invoice_no . '%');
-    //         })
-
-    //         ->when($request->payment_status_id, function ($query) use ($request) {
-    //             $query->where('payment_status_id', $request->payment_status_id);
-    //         })
-
-    //         ->when($request->payment_type_id, function ($query) use ($request) {
-    //             $query->where('payment_type_id', $request->payment_type_id);
-    //         })
-
-    //         ->when($request->date_from && $request->date_to, function ($query) use ($request) {
-    //             $query->whereBetween('created_at', [$request->date_from, $request->date_to]);
-    //         })
-
-    //         ->latest()
-    //         ->paginate(20);
-
-    //     return response()->json([
-    //         'status'  => true,
-    //         'message' => 'Invoices retrieved successfully',
-    //         'data'    => $invoices
-    //     ]);
-    // }
 
     public function list(Request $request)
 {
@@ -122,12 +94,20 @@ public function store(Request $request)
         ], 200);
     }
 
-    public function destroy($id)
-    {
-        $invoice = Invoice::find($id, ['*']);
-        if (!$invoice) return response()->json(['status' => false, 'message' => 'Invoice not found'], 404);
+public function destroy($id)
+{
+    $invoice = Invoice::find($id,['*']);
 
-        $invoice->delete();
-        return response()->json(['status' => true, 'message' => 'Invoice deleted successfully'], 200);
+    if (!$invoice) {
+        return response()->json([
+            'message' => 'Invoice not found'
+        ], 404);
     }
+
+    $invoice->delete();
+
+    return response()->json([
+        'message' => 'Deleted successfully'
+    ]);
+}
 }

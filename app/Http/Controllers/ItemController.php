@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use App\Models\ItemCategory;
 use Illuminate\Support\Facades\Storage;
-
+use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 class ItemController extends Controller
 {
 public function index()
@@ -23,139 +23,6 @@ public function index()
     ]);
 }
 
-
-// public function list(Request $request)
-// {
-//     try {
-//         $categories = ItemCategory::latest()->get();
-
-//         $result = [];
-
-//         foreach ($categories as $category) {
-//             $query = Item::query();
-
-//             $query->where('item_category_id', $category->_id)
-//                   ->orWhere('item_category_id', (string)$category->_id);
-
-//             if ($request->filled('search')) {
-//                 $query->searchText($request->search);
-//             }
-
-//             if ($request->filled('status')) {
-//                 $query->where('status', $request->status);
-//             }
-
-//             $items = $query->with(['category', 'sizePrices.size'])
-//                            ->orderBy('name', 'asc')
-//                            ->get();
-
-//             $result[] = [
-//                 'category_id'   => (string)$category->_id,
-//                 'category_name' => $category->name,
-//                 'items_count'   => $items->count(),
-//                 'items'         => $items->map(function ($item) {
-//                     return [
-//                         'id'     => $item->id,
-//                         'name'   => $item->name,
-//                         'image'  => $item->image,
-//                         'status' => $item->status,
-//                         'prices' => $item->sizePrices->map(function ($price) {
-//                             return [
-//                                 'size'  => $price->size->size_name ?? null,
-//                                 'code'  => $price->size->size_code ?? null,
-//                                 'price' => $price->price,
-//                             ];
-//                         }),
-//                     ];
-//                 }),
-//             ];
-//         }
-
-//         return response()->json([
-//             'status'           => true,
-//             'message'          => 'Items retrieved successfully by category',
-//             'total_categories' => count($result),
-//             'data'             => $result
-//         ]);
-
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'status'  => false,
-//             'message' => 'Error occurred',
-//             'error'   => $e->getMessage()
-//         ], 500);
-//     }
-// }
-// public function list(Request $request)
-// {
-//     try {
-//         $categories = ItemCategory::latest()->get();
-
-//         $result = [];
-
-//         foreach ($categories as $category) {
-
-//             $query = Item::query()
-//                 ->where(function ($q) use ($category) {
-//                     $q->where('item_category_id', $category->_id)
-//                       ->orWhere('item_category_id', (string)$category->_id);
-//                 });
-
-//             // search (safe grouping)
-//             if ($request->filled('search')) {
-//                 $search = $request->search;
-
-//                 $query->where(function ($q) use ($search) {
-//                     $q->where('name', 'like', "%$search%");
-//                 });
-//             }
-
-//             // status filter
-//             if ($request->filled('status')) {
-//                 $query->where('status', $request->status);
-//             }
-
-//             $items = $query->with(['category', 'sizePrices.size'])
-//                            ->orderBy('name', 'asc')
-//                            ->get();
-
-//             $result[] = [
-//                 'category_id'   => (string)$category->_id,
-//                 'category_name' => $category->name,
-//                 'items_count'   => $items->count(),
-//                 'items'         => $items->map(function ($item) {
-//                     return [
-//                         'id'     => $item->id,
-//                         'name'   => $item->name,
-//                         'image'  => $item->image,
-//                         'status' => $item->status,
-//                         'prices' => $item->sizePrices->map(function ($price) {
-//                             return [
-//                                 'size'  => $price->size->size_name ?? null,
-//                                 'code'  => $price->size->size_code ?? null,
-//                                 'price' => $price->price,
-//                             ];
-//                         }),
-//                     ];
-//                 }),
-//             ];
-//         }
-
-//         return response()->json([
-//             'status'           => true,
-//             'message'          => 'Items retrieved successfully by category',
-//             'total_categories' => count($result),
-//             'data'             => $result
-//         ]);
-
-//     } catch (\Exception $e) {
-//         return response()->json([
-//             'status'  => false,
-//             'message' => 'Error occurred',
-//             'error'   => $e->getMessage()
-//         ], 500);
-//     }
-// }
 
     public function list(Request $request)
     {
@@ -208,107 +75,61 @@ public function index()
             ], 500);
         }
     }
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'item_category_id' => 'required|exists:item_categories,id',
-            'name'             => 'required|string|max:255',
-            'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'status'           => 'nullable|in:In Stock,Out of Stock',
-        ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
 
-        $data = $request->only(['item_category_id', 'name', 'status']);
+public function store(Request $request)
+{
+    // VALIDATION
+    $validator = Validator::make($request->all(), [
+        'item_category_id' => 'required|exists:item_categories,id',
+        'name'             => 'required|string|max:255',
+        'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'status'           => 'nullable|in:In Stock,Out of Stock',
+    ]);
 
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $fileName = time() . '_' . rand(100000, 999999) . '.' . $file->getClientOriginalExtension();
-            $destinationPath = public_path('images/items');
-
-            
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
-
-            $file->move($destinationPath, $fileName);
-            $data['image'] = url('images/items/' . $fileName);
-        }
-
-        $item = Item::create($data);
-
+    if ($validator->fails()) {
         return response()->json([
-            'status'  => true,
-            'message' => 'Item created successfully',
-            'data'    => $item->load('category')
-        ], 201);
+            'status'  => false,
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors()
+        ], 422);
     }
 
+    // DATA
+    $data = $request->only([
+        'item_category_id',
+        'name',
+        'status'
+    ]);
 
-// public function store(Request $request)
-// {
-//     $validator = Validator::make($request->all(), [
-//         'item_category_id' => 'required|exists:item_categories,id',
-//         'name'             => 'required|string|max:255',
-//         'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-//         'status'           => 'nullable|in:In Stock,Out of Stock',
-//     ]);
+    $data['status'] = $data['status'] ?? 'In Stock';
 
-//     if ($validator->fails()) {
-//         return response()->json([
-//             'status'  => false,
-//             'message' => 'Validation failed',
-//             'errors'  => $validator->errors()
-//         ], 422);
-//     }
+    // IMAGE UPLOAD
+    if ($request->hasFile('image')) {
 
-//     $data = $request->only(['item_category_id', 'name', 'status']);
+        $uploaded = Cloudinary::uploadApi()->upload(
+            $request->file('image')->getRealPath(),
+            [
+                'folder' => 'items'
+            ]
+        );
 
-//     // =========================
-//     // IMAGE UPLOAD (AWS + LOCAL)
-//     // =========================
-//     if ($request->hasFile('image')) {
+        $data['image'] = $uploaded['secure_url'];
 
-//         $file = $request->file('image');
-//         $fileName = 'items/' . time() . '_' . rand(1000, 9999) . '.' . $file->getClientOriginalExtension();
+        $data['image_public_id'] = $uploaded['public_id'];
+    }
 
-//         try {
-//             // 👉 Upload to AWS S3 first
-//             $path = $file->storeAs('items', basename($fileName), 's3');
+    // CREATE
+    $item = Item::create($data);
 
-//             Storage::disk('s3')->setVisibility($path, 'public');
+    return response()->json([
+        'status'  => true,
+        'message' => 'Item created successfully',
+        'data'    => $item->load('category')
+    ], 201);
+}
 
-//             $data['image'] = Storage::disk('s3')->url($path);
 
-//         } catch (\Exception $e) {
-
-//             // 👉 fallback to local storage
-//             $destinationPath = public_path('images/items');
-
-//             if (!file_exists($destinationPath)) {
-//                 mkdir($destinationPath, 0755, true);
-//             }
-
-//             $file->move($destinationPath, basename($fileName));
-
-//             $data['image'] = url('images/items/' . basename($fileName));
-//         }
-//     }
-
-//     $item = Item::create($data);
-
-//     return response()->json([
-//         'status'  => true,
-//         'message' => 'Item created successfully',
-//         'data'    => $item->load('category')
-//     ], 201);
-// }
     public function show($id)
     {
         $item = Item::with('category')->find($id);
@@ -327,88 +148,101 @@ public function index()
         ]);
     }
 
-    public function update(Request $request, $id)
-    {
-        $item = Item::find($id, ['*']);
-
-        if (!$item) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Item not found'
-            ], 404);
-        }
-
-        $validator = Validator::make($request->all(), [
-            'item_category_id' => 'nullable|exists:item_categories,id',
-            'name'             => 'string|max:255',
-            'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'status'           => 'nullable|in:In Stock,Out of Stock',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Validation failed',
-                'errors'  => $validator->errors()
-            ], 422);
-        }
-
-        $data = $request->only(['item_category_id', 'name', 'status']);
 
 
-        if ($request->hasFile('image')) {
-            $file = $request->file('image');
-            $fileName = time() . '_' . rand(100000, 999999) . '.' . $file->getClientOriginalExtension();
-            $destinationPath = public_path('images/items');
+public function update(Request $request, $id)
+{
+    $item = Item::find($id);
 
-            if (!file_exists($destinationPath)) {
-                mkdir($destinationPath, 0755, true);
-            }
-
-            $file->move($destinationPath, $fileName);
-            $data['image'] = url('images/items/' . $fileName);
-
-
-            if ($item->image) {
-                $oldImagePath = public_path(str_replace(url('/'), '', $item->image));
-                if (file_exists($oldImagePath)) {
-                    unlink($oldImagePath);
-                }
-            }
-        }
-
-        $item->update($data);
-
+    if (!$item) {
         return response()->json([
-            'status'  => true,
-            'message' => 'Item updated successfully',
-            'data'    => $item->fresh()->load('category')
-        ]);
+            'status'  => false,
+            'message' => 'Item not found'
+        ], 404);
     }
 
-    public function destroy($id)
-    {
-        $item = Item::find($id, ['*']);
+    // VALIDATION
+    $validator = Validator::make($request->all(), [
+        'item_category_id' => 'nullable|exists:item_categories,id',
+        'name'             => 'nullable|string|max:255',
+        'image'            => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        'status'           => 'nullable|in:In Stock,Out of Stock',
+    ]);
 
-        if (!$item) {
-            return response()->json([
-                'status'  => false,
-                'message' => 'Item not found'
-            ], 404);
-        }
-
-        if ($item->image) {
-            $oldImagePath = public_path(str_replace(url('/'), '', $item->image));
-            if (file_exists($oldImagePath)) {
-                unlink($oldImagePath);
-            }
-        }
-
-        $item->delete();
-
+    if ($validator->fails()) {
         return response()->json([
-            'status'  => true,
-            'message' => 'Item deleted successfully'
-        ], 200);
+            'status'  => false,
+            'message' => 'Validation failed',
+            'errors'  => $validator->errors()
+        ], 422);
     }
+
+    // DATA
+    $data = $request->only([
+        'item_category_id',
+        'name',
+        'status'
+    ]);
+
+    // IMAGE UPDATE
+    if ($request->hasFile('image')) {
+
+        // delete old image from cloudinary
+        if ($item->image_public_id) {
+            Cloudinary::uploadApi()->destroy(
+                $item->image_public_id
+            );
+        }
+
+        // upload new image
+        $uploaded = Cloudinary::uploadApi()->upload(
+            $request->file('image')->getRealPath(),
+            [
+                'folder' => 'items'
+            ]
+        );
+
+        $data['image'] = $uploaded['secure_url'];
+
+        $data['image_public_id'] = $uploaded['public_id'];
+    }
+
+    // UPDATE ITEM
+    $item->update($data);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Item updated successfully',
+        'data'    => $item->fresh()->load('category')
+    ]);
+}
+
+
+public function destroy($id)
+{
+    $item = Item::find($id);
+
+    if (!$item) {
+        return response()->json([
+            'status'  => false,
+            'message' => 'Item not found'
+        ], 404);
+    }
+
+    // DELETE IMAGE FROM CLOUDINARY
+    if ($item->image_public_id) {
+
+        Cloudinary::uploadApi()->destroy(
+            $item->image_public_id
+        );
+    }
+
+    // DELETE ITEM
+    $item->delete();
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Item deleted successfully'
+    ], 200);
+}
 }

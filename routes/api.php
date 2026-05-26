@@ -126,3 +126,6 @@ Route::middleware(['auth.token'])->group(function () {
     });
     
 });
+Route::get('/test-cloudinary', function () {
+    return env('CLOUDINARY_URL');
+});

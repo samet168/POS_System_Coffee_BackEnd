@@ -23,31 +23,6 @@ class OrderController extends Controller
         ]);
     }
 
-//     public function list(Request $request)
-// {
-//     $orders = Order::with(['user', 'discount'])
-
-//         ->when($request->user_id, function ($query) use ($request) {
-//             $query->where('user_id', $request->user_id);
-//         })
-
-//         ->when($request->discount_id, function ($query) use ($request) {
-//             $query->where('discount_id', $request->discount_id);
-//         })
-
-//         ->when($request->table_number, function ($query) use ($request) {
-//             $query->where('table_number', 'like', '%' . $request->table_number . '%');
-//         })
-
-//         ->latest()
-//         ->paginate(20);
-
-//     return response()->json([
-//         'status'  => true,
-//         'message' => 'Orders retrieved successfully',
-//         'data'    => $orders
-//     ]);
-// }
 
     public function list(Request $request)
     {

@@ -195,4 +195,18 @@ public function list(Request $request)
             ], 500);
         }
     }
+    public function update(Request $request, $id)
+{
+    $item = OrderItem::findOrFail($id);
+
+    $item->quantity = $request->quantity;
+    $item->sub_total = $item->quantity * $item->unit_price;
+
+    $item->save();
+
+    return response()->json([
+        'message' => 'Updated successfully',
+        'data' => $item
+    ]);
+}
 }

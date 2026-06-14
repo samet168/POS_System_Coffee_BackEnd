@@ -1,38 +1,37 @@
 <?php
 
+
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\Dashboard\dashobardController;
-use App\Http\Controllers\DiscountController;
-use App\Http\Controllers\IceLevelController;
-use App\Http\Controllers\InvoiceController;
-use App\Http\Controllers\ItemCategoryController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\ItemController;
-use App\Http\Controllers\ItemSizePriceController;
-use App\Http\Controllers\ItemStatusController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\ItemCategoryController;
+use App\Http\Controllers\ItemSizePriceController;
 use App\Http\Controllers\OrderItemController;
-use App\Http\Controllers\OrderStatusController;
 use App\Http\Controllers\PaymentStatusController;
 use App\Http\Controllers\PaymentTypeController;
 use App\Http\Controllers\SizeController;
-use App\Http\Controllers\SugarLevelController;
-use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-
+use App\Http\Controllers\Dashboard\dashobardController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware(['auth.token'])->group(function () {
 
-
-
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ADMIN ---
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN ONLY
+    |--------------------------------------------------------------------------
+    */
+
     Route::middleware(['role:admin'])->group(function () {
+
+        Route::get('/dashboard/stats', [dashobardController::class, 'stats']);
 
         Route::get('/dashboard/stats', [dashobardController ::class, 'stats']);
 
@@ -97,35 +96,62 @@ Route::middleware(['auth.token'])->group(function () {
         Route::get('/sizes/{id}', [SizeController::class, 'show']);
         Route::post('/sizes/{id}', [SizeController::class, 'update']);
         Route::delete('/sizes/{id}', [SizeController::class, 'destroy']);
+    });
 
-    // USER និង ADMIN ---
-        Route::middleware(['role:admin,user'])->group(function () {
-        Route::get('/orders', [OrderController::class, 'index']);
+    /*
+    |--------------------------------------------------------------------------
+    | ADMIN + USER
+    |--------------------------------------------------------------------------
+    */
+
+    Route::middleware(['role:admin,user'])->group(function () {
+         Route::get('/orders', [OrderController::class, 'index']);
         Route::get('/orders/list', [OrderController::class, 'list']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders/{id}', [OrderController::class, 'update']);
         Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 
+        
+        Route::get('/order_items', [OrderItemController::class, 'index']);
+        Route::get('/order_items/list', [OrderItemController::class, 'list']);
+        Route::post('/order_items', [OrderItemController::class, 'store']);
+        Route::get('/order_items/{id}', [OrderItemController::class, 'show']);
+        Route::post('/order_items/{id}', [OrderItemController::class, 'update']);
+        Route::delete('/order_items/{id}', [OrderItemController::class, 'destroy']);
+
+
         Route::get('/invoices', [InvoiceController::class, 'index']);
         Route::get('/invoices/list', [InvoiceController::class, 'List']);
         Route::post('/invoices', [InvoiceController::class, 'store']);
         Route::get('/invoices/{id}', [InvoiceController::class, 'show']);
-        Route::post('/invoices/{id}', [InvoiceController::class, 'update']);
-        Route::delete('/invoices/{id}', [InvoiceController::class, 'destroy']);
 
-        Route::get('/view-items', [ItemController::class, 'index']);
-        Route::get('/view-items/list', [ItemController::class, 'list']);
+
+        
+        Route::get('/payment-statuses', [PaymentStatusController::class, 'index']);
+        Route::post('/payment-statuses', [PaymentStatusController::class, 'store']);
+        Route::get('/payment-statuses/{id}', [PaymentStatusController::class, 'show']);
+
+        Route::get('/item-categories', [ItemCategoryController::class, 'index']);
+        Route::get('/item-categories/list', [ItemCategoryController::class, 'list']);
+        Route::post('/item-categories', [ItemCategoryController::class, 'store']);
+        Route::get('/item-categories/{id}', [ItemCategoryController::class, 'show']);
+
+        Route::get('/items', [ItemController::class, 'index']);
+        Route::get('/items/list', [ItemController::class, 'list']);
+        Route::get('/items/{id}', [ItemController::class, 'show']);
+
+        Route::get('/item-size-prices', [ItemSizePriceController::class, 'index']);
+        Route::get('/item-size-prices/list', [ItemSizePriceController::class, 'List']);
+        Route::get('/item-size-prices/{id}', [ItemSizePriceController::class, 'show']);
 
         Route::get('/profile', [UserController::class, 'profile']);
         Route::post('/profile/update', [UserController::class, 'updateProfile']);
         Route::post('/change-password', [UserController::class, 'changePassword']);
-    
     });
 
-    });
-    
 });
+
 Route::get('/test-cloudinary', function () {
     return env('CLOUDINARY_URL');
 });
